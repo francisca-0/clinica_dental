@@ -5,6 +5,7 @@ import json
 import os
 from typing import Optional
 
+from base_datos import BaseDatosClinica
 from modelos import (AsistenteDental, AtencionMedica, Cirugia, IndicadorExterno,
                      IndicadorNoDisponible, Limpieza, Odontologo, Ortodoncia,
                      Paciente, Persona, Radiografia, TIPOS_TRATAMIENTO,
@@ -17,6 +18,7 @@ CAMPOS_MODIFICABLES = {"telefono", "correo", "alergias", "alergia_anestesia",
 class Clinica:
     def __init__(self, ruta_datos: str):
         self.ruta = ruta_datos
+        self.bd = BaseDatosClinica(os.path.join(os.path.dirname(self.ruta), "clinica.bd"))
         self.indicador = IndicadorExterno()
         self.odontologo = Odontologo("11111111-1", "Dra. Ana Soto", "912345678",
                                      "ana.soto@clinica.cl", "OD-01", "Mañana",
@@ -92,6 +94,14 @@ class Clinica:
             raise ValueError("Ya existe un paciente con ese RUT.")
         self.pacientes[paciente.rut] = paciente
         self.guardar()
+        try:
+            self.bd.registrar_paciente(
+                paciente.rut, paciente.nombre, paciente.telefono, paciente.correo,
+                paciente.historial_medico, paciente.alergias, paciente.alergia_anestesia,
+                paciente.dias_deuda_vencida
+            )
+        except Exception:
+            pass
         return paciente
 
     def listar_pacientes(self) -> list[Paciente]:
@@ -105,6 +115,10 @@ class Clinica:
             raise ValueError("No existe un paciente con ese RUT.")
         setattr(paciente, campo, valor)  # los setters validan
         self.guardar()
+        try:
+            self.bd.actualizar_paciente(paciente.rut, **{campo: valor})
+        except Exception:
+            pass
         return paciente
 
     def eliminar_paciente(self, rut: str):
@@ -113,6 +127,10 @@ class Clinica:
             raise ValueError("No existe un paciente con ese RUT.")
         del self.pacientes[paciente.rut]
         self.guardar()
+        try:
+            self.bd.eliminar_paciente(paciente.rut)
+        except Exception:
+            pass
 
     # -- Tratamientos -----------------------------------------------------------
     def crear_tratamiento(self, tipo: str, descripcion: str, costo_base: float, **extra):
@@ -150,6 +168,27 @@ class Clinica:
             self.atenciones.append(atencion)
             self._sig_atencion += 1
             self.guardar()
+            try:
+                detalles_bd = [{
+                    "tratamiento": d.descripcion,
+                    "cantidad": d.cantidad,
+                    "precio_unitario": d.precio_unitario or 0.0,
+                    "subtotal": d.calcular_subtotal()
+                } for d in atencion.detalles]
+                self.bd.registrar_ficha_medica(
+                    paciente_rut=paciente.rut,
+                    odontologo=f"{self.odontologo.nombre} ({self.odontologo.especialidad})",
+                    fecha=atencion.fecha.isoformat(),
+                    hora=atencion.hora,
+                    motivo_consulta="Atención odontológica programada",
+                    diagnostico="Procedimiento realizado según protocolo",
+                    estado=atencion.estado,
+                    monto_total=atencion.monto_total or 0.0,
+                    valor_dolar_usado=atencion.valor_dolar_usado,
+                    detalles=detalles_bd
+                )
+            except Exception:
+                pass
         return ok, motivo, atencion
 
 

@@ -447,6 +447,50 @@ def ver_permisos(c: Clinica):
               f"Asistente={c.asistente.verificar_permisos(accion)}")
 
 
+def consultar_ficha_medica_bd(c: Clinica):
+    print("\n========================================================")
+    print("      CONSULTAR FICHA MÉDICA DE PACIENTE (.BD)          ")
+    print("========================================================")
+    paciente = elegir_paciente(c)
+    if not paciente:
+        return
+
+    fichas = c.bd.listar_fichas_paciente(paciente.rut)
+
+    print("\n" + "=" * 65)
+    print(f"  HISTORIAL CLÍNICO: {paciente.nombre.upper()}")
+    print("=" * 65)
+    print(f"  RUT:                  {paciente.rut_formateado}")
+    print(f"  Teléfono:             {paciente.telefono or 'No registrado'}")
+    print(f"  Correo:               {paciente.correo or 'No registrado'}")
+    print(f"  Alergia anestesia:    {paciente.texto_alergia_anestesia}")
+    print(f"  Otras alergias:       {paciente.alergias or 'Ninguna registrada'}")
+    print(f"  Situación financiera: {paciente.verificar_estado_financiero()}")
+    print(f"  Historial base:       {paciente.historial_medico or 'Sin anotaciones previas'}")
+    print("-" * 65)
+    print(f"  FICHAS MÉDICAS REGISTRADAS EN LA BD ({len(fichas)} encontrada(s)):")
+    print("-" * 65)
+
+    if not fichas:
+        print("  Este paciente aún no registra fichas médicas en la base de datos.")
+    else:
+        for idx, f in enumerate(fichas, 1):
+            print(f"\n  [Ficha Médica N° {f['id_ficha']}]  ({idx} de {len(fichas)})")
+            print(f"    Fecha y hora:       {f['fecha']} a las {f['hora']} hrs")
+            print(f"    Profesional:        {f['odontologo']}")
+            print(f"    Motivo consulta:    {f['motivo_consulta'] or 'Atención clínica'}")
+            print(f"    Diagnóstico:        {f['diagnostico'] or 'En evaluación'}")
+            if f.get('observaciones'):
+                print(f"    Observaciones:      {f['observaciones']}")
+            print(f"    Estado de atención: {f['estado'].upper()}")
+            print("    Tratamientos / Procedimientos:")
+            for d in f.get("detalles", []):
+                print(f"      · {d['tratamiento']} (x{d['cantidad']}) -> Subtotal: {clp(d['subtotal'])}")
+            print(f"    MONTO TOTAL:        {clp(f['monto_total'])}")
+            print("  " + "." * 55)
+    print("=" * 65 + "\n")
+
+
 # ---------------------------------------------------------------------------
 # Menú
 # ---------------------------------------------------------------------------
@@ -463,8 +507,9 @@ def menu():
         "6": ("Ver tratamientos (duración y costo)", mostrar_catalogo),
         "7": ("Registrar ficha de atención", registrar_atencion),
         "8": ("Ver fichas de atención (detalle)", ver_atenciones),
-        "9": ("Consultar dólar del día", consultar_dolar),
-        "10": ("Ver permisos de trabajadores", ver_permisos),
+        "9": ("Consultar ficha médica de paciente (.BD)", consultar_ficha_medica_bd),
+        "10": ("Consultar dólar del día", consultar_dolar),
+        "11": ("Ver permisos de trabajadores", ver_permisos),
     }
     while True:
         print("\n===== Clínica Dental Sonrisas =====")

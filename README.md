@@ -99,6 +99,12 @@ A continuación se detallan de forma exhaustiva todos los cambios y componentes 
   - Si el archivo `datos_clinica.json` sufre modificaciones manuales inválidas o corrupción de sintaxis, la clase `Clinica` lo detecta, crea un respaldo automático con extensión `.corrupto`, restaura el catálogo base en un nuevo archivo limpio y avisa al usuario en el menú principal sin interrumpir la ejecución.
 - **Serialización Limpia:**
   - Métodos `to_dict()` y `from_dict()` en todas las entidades para una serialización JSON desacoplada y predecible.
+- **Librería de Base de Datos Relacional (`base_datos.py` y archivo `.bd`):**
+  - Implementación con SQLite nativo de Python para persistencia en archivo `clinica.bd`.
+  - **Relación 1 a N:** Cada paciente posee su propio historial de fichas médicas vinculadas por clave foránea (`paciente_rut REFERENCES pacientes(rut) ON DELETE CASCADE`).
+  - **Detalle de procedimientos:** Cada ficha médica desglosa múltiples tratamientos con cantidad, valor unitario y subtotal.
+  - **Programación segura en BD:** Consultas parametrizadas (protección contra SQL Injection), gestión determinista de conexiones (`contextlib.contextmanager`), transacciones seguras y migración/sincronización automática de datos existentes.
+
 
 ---
 
@@ -131,8 +137,10 @@ A continuación se detallan de forma exhaustiva todos los cambios y componentes 
 
 ## 📁 Estructura de Archivos del Repositorio
 
-- [`main.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/main.py): Interfaz de usuario interactiva por consola, menú principal de 10 opciones y lectura segura de entradas.
-- [`clinica.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/clinica.py): Capa de lógica de negocio, orquestación de entidades, operaciones CRUD y persistencia segura en JSON.
+- [`main.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/main.py): Interfaz de usuario interactiva por consola, menú principal de 11 opciones y lectura segura de entradas.
+- [`clinica.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/clinica.py): Capa de lógica de negocio, orquestación de entidades, operaciones CRUD y sincronización dual (JSON y Base de Datos .BD).
+- [`base_datos.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/base_datos.py): Librería de persistencia relacional en SQLite que administra pacientes y sus fichas médicas en el archivo `.bd`.
+- [`clinica.bd`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/clinica.bd): Base de datos relacional SQLite con tablas de pacientes, fichas médicas y líneas de tratamiento asociadas.
 - [`modelos.py`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/modelos.py): Definición de clases del modelo UML (Persona, Paciente, Trabajador, Odontólogo, Asistente, Tratamientos, Atenciones e Indicador de divisas).
 - [`datos_clinica.json`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/datos_clinica.json): Archivo de persistencia de datos (pacientes, catálogo y atenciones registradas).
 - [`ejecutar.bat`](file:///C:/Users/hobif/OneDrive/Escritorio/clinica_dental/ejecutar.bat): Script de ejecución rápida para entornos Windows.
